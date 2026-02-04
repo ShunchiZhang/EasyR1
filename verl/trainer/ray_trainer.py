@@ -182,7 +182,7 @@ class RayPPOTrainer:
         self.val_reward_fn = val_reward_fn
 
         self.val_reward_score = 0.0
-        self.best_val_reward_score = -1.0
+        self.best_val_reward_score = -float("inf")
         self.best_global_step = None
 
         self.hybrid_engine = config.worker.hybrid_engine
@@ -345,7 +345,7 @@ class RayPPOTrainer:
         elif self.config.trainer.find_last_checkpoint:
             load_checkpoint_path, tracker_info = find_latest_ckpt(self.config.trainer.save_checkpoint_path)
             if tracker_info is not None:
-                self.best_val_reward_score = tracker_info.get("best_val_reward_score", 0.0)
+                self.best_val_reward_score = tracker_info.get("best_val_reward_score", -float("inf"))
                 self.best_global_step = tracker_info.get("best_global_step", 0)
         else:
             load_checkpoint_path = None
