@@ -26,7 +26,7 @@ from ...protocol import DataProto
 from .config import RewardConfig
 
 
-class RewardInput(TypedDict):
+class RewardInput(TypedDict, total=False):
     response: str
     response_length: int
     ground_truth: str
@@ -57,11 +57,12 @@ class SequentialFunctionRewardManagerMixin:
             response_str = self.tokenizer.decode(
                 valid_response_ids, skip_special_tokens=self.config.skip_special_tokens
             )
+            reward_input = {key: data.non_tensor_batch[key][i] for key in data.non_tensor_batch.keys()}
             score = self.reward_fn(
                 {
                     "response": response_str,
                     "response_length": cur_response_length,
-                    "ground_truth": data.non_tensor_batch["ground_truth"][i],
+                    **reward_input,
                 }
             )
             reward_tensor[i, cur_response_length - 1] = score["overall"]
@@ -84,11 +85,12 @@ class BatchFunctionRewardManagerMixin:
             response_str = self.tokenizer.decode(
                 valid_response_ids, skip_special_tokens=self.config.skip_special_tokens
             )
+            reward_input = {key: data.non_tensor_batch[key][i] for key in data.non_tensor_batch.keys()}
             reward_inputs.append(
                 {
                     "response": response_str,
                     "response_length": cur_response_length,
-                    "ground_truth": data.non_tensor_batch["ground_truth"][i],
+                    **reward_input,
                 }
             )
 
