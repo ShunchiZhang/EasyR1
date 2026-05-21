@@ -121,10 +121,11 @@ class RLHFDataset(Dataset):
         self.min_pixels = min_pixels
         self.max_pixels = max_pixels
 
-        if "@" in data_path:
-            data_path, data_split = data_path.split("@")
-        else:
-            data_split = "train"
+        # syntax: "path", "path@split", or "hub_repo@config@split" for multi-config HF datasets
+        parts = data_path.split("@")
+        data_path = parts[0]
+        data_name = parts[1] if len(parts) >= 3 else None
+        data_split = parts[-1] if len(parts) >= 2 else "train"
 
         if os.path.isdir(data_path):
             # when we use dataset builder, we should always refer to the train split
@@ -135,7 +136,7 @@ class RLHFDataset(Dataset):
             self.dataset = load_dataset(file_type, data_files=data_path, split=data_split)
         else:
             # load remote dataset from huggingface hub
-            self.dataset = load_dataset(data_path, split=data_split)
+            self.dataset = load_dataset(data_path, data_name, split=data_split)
 
         self.format_prompt = None
         if format_prompt:
