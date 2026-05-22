@@ -182,6 +182,7 @@ class RayPPOTrainer:
         self.val_reward_fn = val_reward_fn
 
         self.val_reward_score = 0.0
+        self.last_val_metrics: dict[str, Any] = {}
         self.best_val_reward_score = -float("inf")
         self.best_global_step = None
 
@@ -307,8 +308,10 @@ class RayPPOTrainer:
 
     def _save_checkpoint(self) -> None:
         # path: {save_checkpoint_path}/global_step_{global_step}/{actor,critic}
-        if self.val_reward_score > self.best_val_reward_score:
-            self.best_val_reward_score = self.val_reward_score
+        best_metric_key = self.config.trainer.val_metric_for_best
+        current_score = self.last_val_metrics.get(best_metric_key, self.val_reward_score)
+        if current_score > self.best_val_reward_score:
+            self.best_val_reward_score = current_score
             self.best_global_step = self.global_step
 
         remove_obsolete_ckpt(
@@ -444,7 +447,8 @@ class RayPPOTrainer:
         val_reward_metrics = {f"val/{key}_reward": value for key, value in reduce_metrics(reward_metrics_lst).items()}
         val_length_metrics = {f"val_{key}": value for key, value in reduce_metrics(length_metrics_lst).items()}
         print("Finish validation.")
-        return {"val/reward_score": self.val_reward_score, **val_reward_metrics, **val_length_metrics}
+        self.last_val_metrics = {"val/reward_score": self.val_reward_score, **val_reward_metrics, **val_length_metrics}
+        return self.last_val_metrics
 
     def _balance_batch(self, batch: DataProto, metrics: dict[str, Any], logging_prefix: str = "global_seqlen") -> None:
         """Reorder the data on single controller such that each dp rank gets similar total tokens"""

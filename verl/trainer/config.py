@@ -128,6 +128,8 @@ class TrainerConfig:
     """max number of checkpoints to save, -1 means no limit"""
     save_model_only: bool = False
     """save model only, no optimizer state dict"""
+    val_metric_for_best: str = "val/reward_score"
+    """validation metric key used to select the best checkpoint (higher is better)"""
     save_checkpoint_path: Optional[str] = None
     """save checkpoint path, if not specified, use `checkpoints/project_name/experiment_name`"""
     load_checkpoint_path: Optional[str] = None
